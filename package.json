@@ -33,7 +33,7 @@
     "@ai-sdk/anthropic": "^4.0.71",
     "@ai-sdk/google": "^4.0.80",
     "@ai-sdk/openai": "^4.0.52",
-    "@ai-sdk/react": "^1.0.0",
+    "@ai-sdk/react": "^4.0.137",
     "@hookform/resolvers": "^5.9.1",
     "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
     "@paralleldrive/cuid2": "^3.3.0",
