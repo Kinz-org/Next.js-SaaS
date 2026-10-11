@@ -30,7 +30,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.71",
+    "@ai-sdk/anthropic": "^4.0.77",
     "@ai-sdk/google": "^4.0.80",
     "@ai-sdk/openai": "^4.0.52",
     "@ai-sdk/react": "^1.0.0",
