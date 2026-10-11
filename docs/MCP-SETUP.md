@@ -48,7 +48,7 @@ The next steps assume **Cursor** (most popular, easiest setup). Differences for 
 
 1. After I push the code to GitHub (Phase 3), you'll clone it:
    ```bash
-   git clone https://github.com/nassim0014/your-repo-name.git
+   git clone https://github.com/Kinz-org/your-repo-name.git
    cd your-repo-name
    ```
 2. In Cursor: **File → Open Folder →** select the cloned folder

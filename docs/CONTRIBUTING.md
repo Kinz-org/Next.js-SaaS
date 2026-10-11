@@ -5,7 +5,7 @@ Thanks for your interest in improving this boilerplate! This doc covers the basi
 ## Setup
 
 ```bash
-git clone https://github.com/nassim0014/Next.js-SaaS.git
+git clone https://github.com/Kinz-org/Next.js-SaaS.git
 cd Next.js-SaaS
 pnpm install
 cp .env.example .env.local
