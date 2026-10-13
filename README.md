@@ -4,7 +4,7 @@
 
 ### Ship your AI SaaS in days, not months. With AI cost observability that prevents token-bill surprises.
 
-[![Build](https://img.shields.io/github/actions/workflow/status/nassim0014/Next.js-SaaS/ci.yml?branch=main&label=build&style=flat-square)](https://github.com/nassim0014/Next.js-SaaS/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/Kinz-org/Next.js-SaaS/ci.yml?branch=main&label=build&style=flat-square)](https://github.com/Kinz-org/Next.js-SaaS/actions)
 [![License](https://img.shields.io/badge/license-MIT%20%2F%20Commercial-blue?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.1.0-brightgreen?style=flat-square)](#)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org)
@@ -83,7 +83,7 @@ Every AI SaaS founder gets burned by unexpected token bills. Most boilerplates g
 
 ```bash
 # 1. Clone + install
-git clone https://github.com/nassim0014/Next.js-SaaS.git
+git clone https://github.com/Kinz-org/Next.js-SaaS.git
 cd Next.js-SaaS
 nvm use          # reads .nvmrc → Node 22 (skip if you already run Node 22.13+)
 pnpm install
@@ -304,7 +304,7 @@ GitHub: [@nassim0014](https://github.com/nassim0014)
 
 Dual-licensed under [MIT](LICENSE) (personal/learning) and Commercial (production SaaS).
 
-Purchasing the Commercial License funds ongoing development. [Buy it here](https://gumroad.com/l/your-saas-boilerplate) (replace with your URL).
+Commercial terms are in [COMMERCIAL.md](COMMERCIAL.md). Purchasing the Commercial License funds ongoing development.
 
 ---
 
