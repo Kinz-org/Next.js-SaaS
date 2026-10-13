@@ -4,7 +4,7 @@ export const siteConfig = {
     "Production-grade AI SaaS boilerplate - multi-tenant, RBAC, audit logs, GDPR, MCP-ready.",
   url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   links: {
-    github: "https://github.com/nassim0014/Next.js-SaaS",
+    github: "https://github.com/Kinz-org/Next.js-SaaS",
     gumroad: "https://gumroad.com/l/your-saas-boilerplate", // Update after listing
     docs: "/docs",
   },
