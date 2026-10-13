@@ -56,7 +56,7 @@ experimental until the above is actually addressed.
 ## Option A - Deploy via Cloudflare Dashboard (easiest)
 
 1. Go to https://dash.cloudflare.com → Workers & Pages → Create → Pages → Connect to Git
-2. Select your `nassim0014/Next.js-SaaS` GitHub repo
+2. Select your `Kinz-org/Next.js-SaaS` GitHub repo
 3. Configure build:
    - **Framework preset:** Next.js
    - **Build command:** `npx @opennextjs/cloudflare && pnpm build`

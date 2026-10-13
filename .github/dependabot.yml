@@ -14,7 +14,7 @@ updates:
     commit-message:
       prefix: "chore(deps):"
     reviewers:
-      - "nassim0014"
+      - "kinzorg-afk"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -27,4 +27,4 @@ updates:
     commit-message:
       prefix: "chore(ci):"
     reviewers:
-      - "nassim0014"
+      - "kinzorg-afk"
