@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { signWebhook } from "./signer";
 import { scheduleRetry } from "./retry";
+import { buildWebhookBody, webhookHeaders } from "./payload";
 
 /**
  * Outbound webhook dispatcher.
@@ -28,11 +29,13 @@ export async function dispatchWebhookEvent(
 
   if (endpoints.length === 0) return;
 
-  const body = JSON.stringify({ event: eventType, payload, timestamp: new Date().toISOString() });
+  const body = buildWebhookBody(eventType, payload);
 
   // 2. Dispatch to each endpoint (parallel, fire-and-forget)
   await Promise.allSettled(
-    endpoints.map((endpoint) => deliver(endpoint.id, endpoint.url, endpoint.secret, body, eventType))
+    endpoints.map((endpoint) =>
+      deliver(endpoint.id, endpoint.url, endpoint.secret, body, eventType)
+    )
   );
 }
 
@@ -58,11 +61,7 @@ async function deliver(
   try {
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Webhook-Event": eventType,
-        "X-Webhook-Signature": signature,
-      },
+      headers: webhookHeaders(eventType, signature),
       body,
       signal: AbortSignal.timeout(10_000), // 10s timeout
     });
