@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { describe, it, expect } from "vitest";
 import { runWebhookCli, shellQuote, parseFlags } from "@/lib/webhooks/cli";
@@ -33,7 +32,8 @@ describe("webhooks/cli", () => {
     const result = runWebhookCli(signArgs());
     expect(result.code).toBe(0);
     expect(field(result.stdout, "Body")).toBe(expectedBody);
-    const expectedSig = crypto.createHmac("sha256", secret).update(expectedBody).digest("hex");
+    // Independent oracle: printf '%s' "$expectedBody" | openssl dgst -sha256 -hmac s3cret
+    const expectedSig = "4f47297563085495618640b8daa4d78d3a26650c03bee90c723d32f860b3eebf";
     expect(field(result.stdout, "Signature")).toBe(expectedSig);
   });
 
