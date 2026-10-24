@@ -26,6 +26,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "setup": "bash scripts/setup.sh",
+    "webhook:tool": "tsx scripts/webhook-tool.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "prepare": "husky"
   },

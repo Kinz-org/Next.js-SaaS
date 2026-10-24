@@ -212,6 +212,15 @@ Customize plans in `src/lib/billing/plans.ts` + `prisma/seed.ts` (single source 
 1. Dispatch it from anywhere: `await dispatchWebhookEvent(orgId, "your.event", { ... })`
 2. Users subscribe to it from `/dashboard/settings/webhooks`
 3. HMAC-signed delivery + exponential backoff retry handled automatically
+4. Test a receiver without running the app: `pnpm webhook:tool sign` builds a body in the exact
+   shape the dispatcher sends and signs it; `--curl <url>` prints a ready-to-run request with the
+   same headers, and `pnpm webhook:tool verify` checks a signature:
+
+   ```bash
+   pnpm webhook:tool sign --secret <endpoint secret> --event your.event \
+     --payload '{"id":"123"}' --curl http://localhost:4000/hook
+   pnpm webhook:tool verify --secret <endpoint secret> --body '<raw body>' --signature <hex>
+   ```
 
 ---
 
