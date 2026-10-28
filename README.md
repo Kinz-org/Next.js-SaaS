@@ -136,12 +136,14 @@ See [`docs/MCP-SETUP.md`](docs/MCP-SETUP.md) for the 15-minute setup walkthrough
 Next.js-SaaS/
 ├── .mcp.json                     # MCP servers (Cursor/Claude Desktop)
 ├── prisma/
-│   ├── schema.prisma             # 21 models, 7 domains, multi-tenant
+│   ├── schema.prisma             # 25 models, multi-tenant
 │   └── seed.ts                   # Plans, models, permissions, demo data
 ├── src/
 │   ├── app/
-│   │   ├── (marketing)/          # Landing, pricing, blog
-│   │   ├── (auth)/               # Login, signup, OAuth callback
+│   │   ├── page.tsx              # Landing page
+│   │   ├── pricing/              # Pricing page
+│   │   ├── login/ signup/        # Auth pages (OAuth callback is in api/auth/)
+│   │   ├── onboarding/           # First-run org setup
 │   │   ├── dashboard/            # Org-scoped app (guarded)
 │   │   │   ├── agents/           # AI agent CRUD + chat
 │   │   │   ├── knowledge-base/   # RAG upload + search
@@ -151,7 +153,7 @@ Next.js-SaaS/
 │   │       ├── chat/             # Streaming AI with cost metering
 │   │       ├── webhooks/         # Stripe + Supabase receivers
 │   │       ├── cron/             # Usage meter + webhook retry
-│   │       └── health/           # /livez + /readyz
+│   │       └── health/ livez/ readyz/  # Health probes
 │   ├── lib/
 │   │   ├── ai/                   # llm, embeddings, rag, stream, ⭐ cost
 │   │   ├── auth/                 # session, rbac, org-context, permissions
@@ -196,10 +198,10 @@ Customize plans in `src/lib/billing/plans.ts` + `prisma/seed.ts` (single source 
 
 ### Add a new LLM model
 
-1. Add it to `src/config/models.ts` (with pricing)
-2. Add it to the `AVAILABLE_MODELS` array in `prisma/seed.ts`
-3. Run `pnpm db:seed`
-4. It now appears in the agent creation UI
+1. Add it to the `AVAILABLE_MODELS` array in `src/config/models.ts` (with pricing).
+   `prisma/seed.ts` imports that array, so there is no second list to edit.
+2. Run `pnpm db:seed`
+3. It now appears in the agent creation UI
 
 ### Add a new permission / role
 
@@ -228,7 +230,7 @@ Customize plans in `src/lib/billing/plans.ts` + `prisma/seed.ts` (single source 
 
 ### Free-tier-friendly deploy (recommended)
 
-Deploy to **Cloudflare Pages** (free, commercial-OK) - see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the full guide.
+Deploy to **Cloudflare Pages** (free, commercial-OK) - see [`docs/DEPLOYMENT-CLOUDFLARE.md`](docs/DEPLOYMENT-CLOUDFLARE.md) for the full guide.
 
 ### Vercel
 
