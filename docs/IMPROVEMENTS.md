@@ -6,7 +6,7 @@ cycles rather than the easiest one.
 
 **Status (2026-10-14):** items 1–8 (first numbering) are done, and so are items 6 and 7
 (re-numbered: `metering.ts` coverage, done 2026-10-02; `dispatcher.ts` coverage, done
-2026-10-14). Open, in priority order: items 9–14. Item 7 (rate limiting, first numbering) was
+2026-10-14). Open, in priority order: items 10–14 (item 9 done 2026-11-09). Item 7 (rate limiting, first numbering) was
 done 2026-09-04 but **only for `/api/chat`**; the other three unprotected routes it names are
 still open — see the item for the carried-forward scope note.
 
@@ -300,7 +300,9 @@ chunks.
 
 Loop-Agent: backlog-refresh / claude / laptop
 
-## 9. `getOrgMembership()` has zero test coverage — it's the org-authorization primitive behind an already-fixed IDOR   `source: coverage`
+## 9. ~~`getOrgMembership()` has zero test coverage — it's the org-authorization primitive behind an already-fixed IDOR~~ ✅   `source: coverage`
+
+**Done 2026-11-09.** `src/lib/auth/org-context.test.ts` (mocked Prisma and `next/headers`) covers the compound-key lookup, ACTIVE returned, missing membership / SUSPENDED / INVITED returning `null`, `getUserOrganizations()`'s ACTIVE filter, and `requireActiveOrgId()` with and without the cookie. Verified the SUSPENDED/INVITED cases fail if the `status !== "ACTIVE"` check is removed.
 
 `src/lib/auth/org-context.ts` (lines 36-48) has no test file at all (only `permissions.test.ts` exists in `src/lib/auth/`). It is the single membership lookup behind both `requireUserWithPermission()` (`src/lib/auth/session.ts:81-82`, used app-wide) and `/api/org/switch` (`src/app/api/org/switch/route.ts:24,45`), and its `if (!membership || membership.status !== "ACTIVE") return null` line is what makes a suspended or removed member correctly fail authorization. This is an auth-decision path whose caller already shipped an IDOR (closed item 1, "sets the active-org cookie without verifying membership") — a dropped `ACTIVE` filter here would reopen that exact bug class with no failing test to catch it.
 
