@@ -27,6 +27,7 @@
     "db:studio": "prisma studio",
     "setup": "bash scripts/setup.sh",
     "webhook:tool": "tsx scripts/webhook-tool.ts",
+    "cost:estimate": "tsx scripts/cost-estimate.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "prepare": "husky"
   },

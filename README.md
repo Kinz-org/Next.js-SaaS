@@ -192,6 +192,18 @@ Plans ship pre-configured in the `Plan` table (seeded by `prisma/seed.ts`):
 
 Customize plans in `src/lib/billing/plans.ts` + `prisma/seed.ts` (single source of truth).
 
+Before setting a price, check what a plan's users would cost you in LLM fees. `pnpm cost:estimate`
+works offline (no database, no API keys) and reads the prices in `src/config/models.ts` and the
+quotas and prices in `src/lib/billing/plans.ts`:
+
+```bash
+pnpm cost:estimate --requests 1000 --input 1500 --output 500 --plan pro
+```
+
+It prints the monthly cost of that usage on every model, the smallest plan whose token quota
+covers it, the margin left from the chosen plan's price, and a warning when the usage is over that
+plan's quota. Add `--json` for machine-readable output.
+
 ---
 
 ## Customization
