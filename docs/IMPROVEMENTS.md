@@ -6,7 +6,7 @@ cycles rather than the easiest one.
 
 **Status (2026-10-14):** items 1–8 (first numbering) are done, and so are items 6 and 7
 (re-numbered: `metering.ts` coverage, done 2026-10-02; `dispatcher.ts` coverage, done
-2026-10-14). Open, in priority order: items 10–14 (item 9 done 2026-11-09). Item 7 (rate limiting, first numbering) was
+2026-10-14). Open, in priority order: items 11–14 (item 9 done 2026-11-09, item 10 done 2026-11-16). Item 7 (rate limiting, first numbering) was
 done 2026-09-04 but **only for `/api/chat`**; the other three unprotected routes it names are
 still open — see the item for the carried-forward scope note.
 
@@ -308,7 +308,17 @@ Loop-Agent: backlog-refresh / claude / laptop
 
 Loop-Agent: backlog-refresh / claude / laptop
 
-## 10. `exportUserData()` (GDPR data export) has zero test coverage   `source: coverage`
+## 10. ~~`exportUserData()` (GDPR data export) has zero test coverage~~ ✅   `source: coverage`
+
+- [x] Covered by `src/lib/gdpr/export.test.ts` (done 2026-11-16). 7 tests, mocked Prisma,
+  audit logger and Supabase Storage, real JSZip (the uploaded archive is unzipped and read
+  back): per-table userId/organizationId scoping, manifest lists only files that exist,
+  `hashedKey` redacted with no raw hash anywhere in the archive, 7-day signed URL recorded in
+  a `COMPLETED` `DataRequest` and the audit log, and both storage error branches rethrown with
+  nothing recorded. Fixed one bug found on the way: when `createSignedUrl` returned neither data
+  nor an error, `throw urlError` rejected with `null`; it now throws an `Error`. That test fails
+  on the old code.
+
 
 `src/lib/gdpr/export.ts` (lines 13-119): eight parallel Prisma reads, a ZIP build, a Supabase Storage upload, a 7-day signed URL, a `DataRequest` row and an audit-log write, with neither error branch (`uploadError`, `urlError`) nor the `hashedKey: "[REDACTED]"` redaction on line 33 exercised. Item 3 (closed) deferred these tests as "needs a Supabase Storage mock which is more involved" and nothing was added since, with no open item tracking it. Every read here is keyed by `userId` (no cross-user exposure), and both error branches `throw` rather than swallow, so a bug's cost is a failed download, not wrong data going to the wrong person — plain coverage gap, not a risky-path one. A `vi.mock` of `@/lib/supabase/admin` returning stubbed `upload`/`createSignedUrl` results would cover the happy path, both error branches, and the redaction assertion.
 
