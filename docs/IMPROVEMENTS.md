@@ -324,7 +324,15 @@ Loop-Agent: backlog-refresh / claude / laptop
 
 Loop-Agent: backlog-refresh / claude / laptop
 
-## 11. `scheduleRetry()`/`getEventsForRetry()` (webhook retry backoff) have zero direct test coverage   `source: coverage`
+## 11. ~~`scheduleRetry()`/`getEventsForRetry()` (webhook retry backoff) have zero direct test coverage~~ ✅   `source: coverage`
+
+- [x] Covered by `src/lib/webhooks/retry.test.ts` (done 2026-11-18). 15 tests, mocked Prisma
+  and a fixed clock: every ladder step at zero jitter, the ±20% jitter bounds, the
+  `attempts = 0` fallback, the give-up branch, and `getEventsForRetry()`'s query and field
+  mapping. Fixed one bug found on the way: the give-up check was `attempts >= 6`, so the 6th
+  failure gave up and the documented 24h step was unreachable (5 retries over ~8.6h, not the
+  6 over ~33h that item 4 and the code comment describe). It is now `attempts > MAX_RETRIES`;
+  two tests fail on the old code.
 
 `src/lib/webhooks/retry.ts` (lines 27-81): `src/app/api/cron/webhook-retry/route.test.ts` replaces `scheduleRetry` with `vi.mock`, so the `RETRY_INTERVALS_MS` backoff ladder, the ±20% jitter, and the `attempts >= MAX_ATTEMPTS` permanent-failure branch never actually execute. The mechanism's *absence* was already the bug in closed item 6 (the cron never called `scheduleRetry`); the logic inside it has still never been verified independently. It's pure arithmetic over a single `prisma.webhookEvent` read/update (retry bookkeeping, not business data — a bad backoff produces wrong timing or an early give-up, both recoverable and already logged), so a mocked-Prisma test covering attempts 0, mid-ladder, and at-max is cheap.
 
