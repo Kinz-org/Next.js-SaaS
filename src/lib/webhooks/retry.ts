@@ -18,7 +18,10 @@ const RETRY_INTERVALS_MS = [
   24 * 60 * 60 * 1000, // 24 hours
 ];
 
-const MAX_ATTEMPTS = RETRY_INTERVALS_MS.length;
+// One retry per step, so an event is given up after its 7th failed delivery
+// (the original plus 6 retries, ~33h). Callers increment `attempts` before
+// calling scheduleRetry(), so `attempts` here counts failures so far.
+const MAX_RETRIES = RETRY_INTERVALS_MS.length;
 
 /**
  * Schedule the next retry for a failed webhook event.
@@ -32,7 +35,7 @@ export async function scheduleRetry(webhookEventId: string): Promise<void> {
 
   if (!event) return;
 
-  if (event.attempts >= MAX_ATTEMPTS) {
+  if (event.attempts > MAX_RETRIES) {
     // Permanently failed - admin should investigate
     await prisma.webhookEvent.update({
       where: { id: webhookEventId },
