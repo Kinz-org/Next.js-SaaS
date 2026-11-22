@@ -58,24 +58,44 @@ async function deliver(
     },
   });
 
+  // Only the request itself decides whether the delivery failed. The status
+  // writes below run outside this try, so a DB error after a 2xx cannot turn a
+  // delivered event into a retried one, and a failed scheduleRetry() after a
+  // non-2xx cannot count the same attempt twice.
+  let response: Response;
   try {
-    const response = await fetch(url, {
+    response = await fetch(url, {
       method: "POST",
       headers: webhookHeaders(eventType, signature),
       body,
       signal: AbortSignal.timeout(10_000), // 10s timeout
     });
-
-    if (response.ok) {
+  } catch (err) {
+    // Note: error message is logged to console, not stored (no metadata column)
+    console.error(`[WEBHOOK DELIVERY FAILED] endpoint=${endpointId} event=${event.id}`, err);
+    await recordOutcome(event.id, async () => {
       await prisma.webhookEvent.update({
+        where: { id: event.id },
+        data: { status: "FAILED", attempts: { increment: 1 } },
+      });
+      await scheduleRetry(event.id);
+    });
+    return;
+  }
+
+  if (response.ok) {
+    await recordOutcome(event.id, () =>
+      prisma.webhookEvent.update({
         where: { id: event.id },
         data: {
           status: "DELIVERED",
           responseCode: response.status,
           deliveredAt: new Date(),
         },
-      });
-    } else {
+      })
+    );
+  } else {
+    await recordOutcome(event.id, async () => {
       await prisma.webhookEvent.update({
         where: { id: event.id },
         data: {
@@ -85,17 +105,19 @@ async function deliver(
         },
       });
       await scheduleRetry(event.id);
-    }
-  } catch (err) {
-    await prisma.webhookEvent.update({
-      where: { id: event.id },
-      data: {
-        status: "FAILED",
-        attempts: { increment: 1 },
-        // Note: error message is logged to console, not stored (no metadata column)
-      },
     });
-    console.error(`[WEBHOOK DELIVERY FAILED] endpoint=${endpointId} event=${event.id}`, err);
-    await scheduleRetry(event.id);
+  }
+}
+
+/**
+ * Run the status bookkeeping for one delivery. A failure here is logged and
+ * the row is left as it is: re-sending or re-counting the delivery because a
+ * DB write failed would be worse than a stale status.
+ */
+async function recordOutcome(eventId: string, write: () => Promise<unknown>): Promise<void> {
+  try {
+    await write();
+  } catch (err) {
+    console.error(`[WEBHOOK BOOKKEEPING FAILED] event=${eventId}`, err);
   }
 }

@@ -178,6 +178,62 @@ describe("dispatchWebhookEvent: status transitions", () => {
   });
 });
 
+describe("dispatchWebhookEvent: bookkeeping failures", () => {
+  it("a DB error after a 2xx does not mark the event FAILED or schedule a retry", async () => {
+    findManyMock.mockResolvedValue([endpoint("ep-1")]);
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    updateMock.mockRejectedValueOnce(new Error("db blip"));
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(dispatchWebhookEvent(ORG, EVENT_TYPE, PAYLOAD)).resolves.toBeUndefined();
+
+    // The receiver already has the event: re-sending it would duplicate it.
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(updateMock.mock.calls[0]![0]).toMatchObject({ data: { status: "DELIVERED" } });
+    expect(scheduleRetryMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(errSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[WEBHOOK BOOKKEEPING FAILED] event=evt-1"),
+      expect.any(Error)
+    );
+  });
+
+  it("a scheduleRetry() error after a non-2xx counts the attempt exactly once", async () => {
+    findManyMock.mockResolvedValue([endpoint("ep-1")]);
+    fetchMock.mockResolvedValue({ ok: false, status: 503 });
+    scheduleRetryMock.mockRejectedValueOnce(new Error("db blip"));
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(dispatchWebhookEvent(ORG, EVENT_TYPE, PAYLOAD)).resolves.toBeUndefined();
+
+    const increments = updateMock.mock.calls.filter(
+      (c) => (c[0] as { data: { attempts?: unknown } }).data.attempts !== undefined
+    );
+    expect(increments).toHaveLength(1);
+    expect(scheduleRetryMock).toHaveBeenCalledTimes(1);
+    expect(errSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[WEBHOOK BOOKKEEPING FAILED] event=evt-1"),
+      expect.any(Error)
+    );
+  });
+
+  it("a DB error while recording a network failure is logged, not thrown", async () => {
+    findManyMock.mockResolvedValue([endpoint("ep-1")]);
+    fetchMock.mockRejectedValue(new TypeError("fetch failed"));
+    updateMock.mockRejectedValueOnce(new Error("db blip"));
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(dispatchWebhookEvent(ORG, EVENT_TYPE, PAYLOAD)).resolves.toBeUndefined();
+
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(scheduleRetryMock).not.toHaveBeenCalled();
+    expect(errSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[WEBHOOK BOOKKEEPING FAILED] event=evt-1"),
+      expect.any(Error)
+    );
+  });
+});
+
 describe("dispatchWebhookEvent: fan-out", () => {
   it("delivers to every subscribed endpoint, one event row each", async () => {
     findManyMock.mockResolvedValue([endpoint("ep-1"), endpoint("ep-2"), endpoint("ep-3")]);

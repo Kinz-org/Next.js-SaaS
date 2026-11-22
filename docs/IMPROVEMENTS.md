@@ -348,7 +348,9 @@ Loop-Agent: backlog-refresh / claude / laptop
 
 Loop-Agent: backlog-refresh / claude / laptop
 
-## 14. `deliver()`'s `try` also wraps its own bookkeeping, so a DB error is treated as a delivery failure   `source: code`
+## 14. ~~`deliver()`'s `try` also wraps its own bookkeeping, so a DB error is treated as a delivery failure~~ ✅   `source: code`
+
+**Done (2026-11-22):** the `try` now covers only `fetch()`. Status writes and `scheduleRetry()` run after it inside `recordOutcome()`, which logs `[WEBHOOK BOOKKEEPING FAILED]` and leaves the row as it is. A DELIVERED write that fails leaves the row PENDING, which the retry cron ignores, so the event is not sent again. Three tests in `dispatcher.test.ts` cover this, and all three fail on the old code.
 
 `src/lib/webhooks/dispatcher.ts`, `deliver()`: the `try` block covers not just `fetch()` but
 also the `webhookEvent.update(...)` calls and `scheduleRetry()` that follow it. Two
