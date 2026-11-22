@@ -73,7 +73,7 @@ async function retryOne(event: RetryEvent): Promise<RetryOutcome> {
       },
     });
     // Schedule the next attempt with exponential backoff, or mark the
-    // event permanently failed once MAX_ATTEMPTS is exceeded. Without
+    // event permanently failed once its retries (MAX_RETRIES in retry.ts) run out. Without
     // this, nextRetryAt keeps its stale past value and getEventsForRetry()
     // re-selects the event on every 5-minute tick forever - no backoff,
     // no cutoff. Mirrors dispatcher.ts's deliver().
