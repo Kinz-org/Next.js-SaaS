@@ -88,7 +88,10 @@ export async function exportUserData(userId: string, organizationId: string): Pr
     .from("uploads")
     .createSignedUrl(path, 60 * 60 * 24 * 7);
 
-  if (urlError || !signedUrlData) throw urlError;
+  if (urlError) throw urlError;
+  // Supabase can in principle return neither data nor an error; throwing the
+  // null `urlError` here would reject with `null`, which callers can't log.
+  if (!signedUrlData) throw new Error(`Supabase returned no signed URL for ${path}`);
 
   const expiresAt = new Date(Date.now() + 60 * 60 * 24 * 7 * 1000);
 
