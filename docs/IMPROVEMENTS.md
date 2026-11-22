@@ -6,7 +6,7 @@ cycles rather than the easiest one.
 
 **Status (2026-10-14):** items 1–8 (first numbering) are done, and so are items 6 and 7
 (re-numbered: `metering.ts` coverage, done 2026-10-02; `dispatcher.ts` coverage, done
-2026-10-14). Open, in priority order: items 9–14. Item 7 (rate limiting, first numbering) was
+2026-10-14). Open, in priority order: items 11–14 (item 9 done 2026-11-09, item 10 done 2026-11-16). Item 7 (rate limiting, first numbering) was
 done 2026-09-04 but **only for `/api/chat`**; the other three unprotected routes it names are
 still open — see the item for the carried-forward scope note.
 
@@ -300,19 +300,39 @@ chunks.
 
 Loop-Agent: backlog-refresh / claude / laptop
 
-## 9. `getOrgMembership()` has zero test coverage — it's the org-authorization primitive behind an already-fixed IDOR   `source: coverage`
+## 9. ~~`getOrgMembership()` has zero test coverage — it's the org-authorization primitive behind an already-fixed IDOR~~ ✅   `source: coverage`
+
+**Done 2026-11-09.** `src/lib/auth/org-context.test.ts` (mocked Prisma and `next/headers`) covers the compound-key lookup, ACTIVE returned, missing membership / SUSPENDED / INVITED returning `null`, `getUserOrganizations()`'s ACTIVE filter, and `requireActiveOrgId()` with and without the cookie. Verified the SUSPENDED/INVITED cases fail if the `status !== "ACTIVE"` check is removed.
 
 `src/lib/auth/org-context.ts` (lines 36-48) has no test file at all (only `permissions.test.ts` exists in `src/lib/auth/`). It is the single membership lookup behind both `requireUserWithPermission()` (`src/lib/auth/session.ts:81-82`, used app-wide) and `/api/org/switch` (`src/app/api/org/switch/route.ts:24,45`), and its `if (!membership || membership.status !== "ACTIVE") return null` line is what makes a suspended or removed member correctly fail authorization. This is an auth-decision path whose caller already shipped an IDOR (closed item 1, "sets the active-org cookie without verifying membership") — a dropped `ACTIVE` filter here would reopen that exact bug class with no failing test to catch it.
 
 Loop-Agent: backlog-refresh / claude / laptop
 
-## 10. `exportUserData()` (GDPR data export) has zero test coverage   `source: coverage`
+## 10. ~~`exportUserData()` (GDPR data export) has zero test coverage~~ ✅   `source: coverage`
+
+- [x] Covered by `src/lib/gdpr/export.test.ts` (done 2026-11-16). 7 tests, mocked Prisma,
+  audit logger and Supabase Storage, real JSZip (the uploaded archive is unzipped and read
+  back): per-table userId/organizationId scoping, manifest lists only files that exist,
+  `hashedKey` redacted with no raw hash anywhere in the archive, 7-day signed URL recorded in
+  a `COMPLETED` `DataRequest` and the audit log, and both storage error branches rethrown with
+  nothing recorded. Fixed one bug found on the way: when `createSignedUrl` returned neither data
+  nor an error, `throw urlError` rejected with `null`; it now throws an `Error`. That test fails
+  on the old code.
+
 
 `src/lib/gdpr/export.ts` (lines 13-119): eight parallel Prisma reads, a ZIP build, a Supabase Storage upload, a 7-day signed URL, a `DataRequest` row and an audit-log write, with neither error branch (`uploadError`, `urlError`) nor the `hashedKey: "[REDACTED]"` redaction on line 33 exercised. Item 3 (closed) deferred these tests as "needs a Supabase Storage mock which is more involved" and nothing was added since, with no open item tracking it. Every read here is keyed by `userId` (no cross-user exposure), and both error branches `throw` rather than swallow, so a bug's cost is a failed download, not wrong data going to the wrong person — plain coverage gap, not a risky-path one. A `vi.mock` of `@/lib/supabase/admin` returning stubbed `upload`/`createSignedUrl` results would cover the happy path, both error branches, and the redaction assertion.
 
 Loop-Agent: backlog-refresh / claude / laptop
 
-## 11. `scheduleRetry()`/`getEventsForRetry()` (webhook retry backoff) have zero direct test coverage   `source: coverage`
+## 11. ~~`scheduleRetry()`/`getEventsForRetry()` (webhook retry backoff) have zero direct test coverage~~ ✅   `source: coverage`
+
+- [x] Covered by `src/lib/webhooks/retry.test.ts` (done 2026-11-18). 15 tests, mocked Prisma
+  and a fixed clock: every ladder step at zero jitter, the ±20% jitter bounds, the
+  `attempts = 0` fallback, the give-up branch, and `getEventsForRetry()`'s query and field
+  mapping. Fixed one bug found on the way: the give-up check was `attempts >= 6`, so the 6th
+  failure gave up and the documented 24h step was unreachable (5 retries over ~8.6h, not the
+  6 over ~33h that item 4 and the code comment describe). It is now `attempts > MAX_RETRIES`;
+  two tests fail on the old code.
 
 `src/lib/webhooks/retry.ts` (lines 27-81): `src/app/api/cron/webhook-retry/route.test.ts` replaces `scheduleRetry` with `vi.mock`, so the `RETRY_INTERVALS_MS` backoff ladder, the ±20% jitter, and the `attempts >= MAX_ATTEMPTS` permanent-failure branch never actually execute. The mechanism's *absence* was already the bug in closed item 6 (the cron never called `scheduleRetry`); the logic inside it has still never been verified independently. It's pure arithmetic over a single `prisma.webhookEvent` read/update (retry bookkeeping, not business data — a bad backoff produces wrong timing or an early give-up, both recoverable and already logged), so a mocked-Prisma test covering attempts 0, mid-ladder, and at-max is cheap.
 
