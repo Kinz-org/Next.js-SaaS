@@ -10,7 +10,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20pgvector-green?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
-[![Prisma](https://img.shields.io/badge/Prisma-6-blue?style=flat-square&logo=prisma&logoColor=white)](https://prisma.io)
+[![Prisma](https://img.shields.io/badge/Prisma-7-blue?style=flat-square&logo=prisma&logoColor=white)](https://prisma.io)
 [![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white)](docs/DEPLOYMENT-CLOUDFLARE.md)
 [![MCP](https://img.shields.io/badge/MCP-ready-purple?style=flat-square)](docs/MCP-SETUP.md)
 
@@ -119,7 +119,7 @@ See [`docs/MCP-SETUP.md`](docs/MCP-SETUP.md) for the 15-minute setup walkthrough
 | **Framework** | Next.js 16 (App Router) | RSC, streaming, server actions |
 | **Language** | TypeScript (strict, zero `any`) | Type-safe end-to-end |
 | **DB** | PostgreSQL (Supabase) + pgvector | One engine for relational + vector + auth + storage |
-| **ORM** | Prisma 6 | Type-safe queries, schema-as-code |
+| **ORM** | Prisma 7 | Type-safe queries, schema-as-code |
 | **Auth** | Supabase Auth + RBAC layer | Email/magic link/OAuth, JWT in cookies |
 | **UI** | shadcn/ui + Tailwind | Copy-paste components, no lock-in |
 | **Validation** | Zod | Shared schemas across client, server, DB |
@@ -136,12 +136,14 @@ See [`docs/MCP-SETUP.md`](docs/MCP-SETUP.md) for the 15-minute setup walkthrough
 Next.js-SaaS/
 ├── .mcp.json                     # MCP servers (Cursor/Claude Desktop)
 ├── prisma/
-│   ├── schema.prisma             # 21 models, 7 domains, multi-tenant
+│   ├── schema.prisma             # 25 models, multi-tenant
 │   └── seed.ts                   # Plans, models, permissions, demo data
 ├── src/
 │   ├── app/
-│   │   ├── (marketing)/          # Landing, pricing, blog
-│   │   ├── (auth)/               # Login, signup, OAuth callback
+│   │   ├── page.tsx              # Landing page
+│   │   ├── pricing/              # Pricing page
+│   │   ├── login/ signup/        # Auth pages (OAuth callback is in api/auth/)
+│   │   ├── onboarding/           # First-run org setup
 │   │   ├── dashboard/            # Org-scoped app (guarded)
 │   │   │   ├── agents/           # AI agent CRUD + chat
 │   │   │   ├── knowledge-base/   # RAG upload + search
@@ -151,7 +153,7 @@ Next.js-SaaS/
 │   │       ├── chat/             # Streaming AI with cost metering
 │   │       ├── webhooks/         # Stripe + Supabase receivers
 │   │       ├── cron/             # Usage meter + webhook retry
-│   │       └── health/           # /livez + /readyz
+│   │       └── health/ livez/ readyz/  # Health probes
 │   ├── lib/
 │   │   ├── ai/                   # llm, embeddings, rag, stream, ⭐ cost
 │   │   ├── auth/                 # session, rbac, org-context, permissions
@@ -190,16 +192,29 @@ Plans ship pre-configured in the `Plan` table (seeded by `prisma/seed.ts`):
 
 Customize plans in `src/lib/billing/plans.ts` + `prisma/seed.ts` (single source of truth).
 
+Before setting a price, check what a plan's users would cost you in LLM fees. `pnpm cost:estimate`
+works offline (no database, no API keys) and reads the prices in `src/config/models.ts` and the
+quotas and prices in `src/lib/billing/plans.ts`:
+
+```bash
+pnpm db:generate   # once, after pnpm install; needs no database
+pnpm cost:estimate --requests 1000 --input 1500 --output 500 --plan pro
+```
+
+It prints the monthly cost of that usage on every model, the smallest plan whose token quota
+covers it, the margin left from the chosen plan's price, and a warning when the usage is over that
+plan's quota. Add `--json` for machine-readable output.
+
 ---
 
 ## Customization
 
 ### Add a new LLM model
 
-1. Add it to `src/config/models.ts` (with pricing)
-2. Add it to the `AVAILABLE_MODELS` array in `prisma/seed.ts`
-3. Run `pnpm db:seed`
-4. It now appears in the agent creation UI
+1. Add it to the `AVAILABLE_MODELS` array in `src/config/models.ts` (with pricing).
+   `prisma/seed.ts` imports that array, so there is no second list to edit.
+2. Run `pnpm db:seed`
+3. It now appears in the agent creation UI
 
 ### Add a new permission / role
 
@@ -228,7 +243,7 @@ Customize plans in `src/lib/billing/plans.ts` + `prisma/seed.ts` (single source 
 
 ### Free-tier-friendly deploy (recommended)
 
-Deploy to **Cloudflare Pages** (free, commercial-OK) - see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the full guide.
+Deploy to **Cloudflare Pages** (free, commercial-OK) - see [`docs/DEPLOYMENT-CLOUDFLARE.md`](docs/DEPLOYMENT-CLOUDFLARE.md) for the full guide.
 
 ### Vercel
 
