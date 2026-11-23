@@ -76,3 +76,6 @@ Thumbs.db
 # temp files from scaffolding
 package.json.tmp
 bun.lock
+
+# vitest coverage (pnpm test:coverage)
+/coverage

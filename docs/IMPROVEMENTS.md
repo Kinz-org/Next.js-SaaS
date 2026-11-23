@@ -6,7 +6,7 @@ cycles rather than the easiest one.
 
 **Status (2026-10-14):** items 1–8 (first numbering) are done, and so are items 6 and 7
 (re-numbered: `metering.ts` coverage, done 2026-10-02; `dispatcher.ts` coverage, done
-2026-10-14). Open, in priority order: items 11–14 (item 9 done 2026-11-09, item 10 done 2026-11-16). Item 7 (rate limiting, first numbering) was
+2026-10-14). Open, in priority order (2026-11-23): item 15, item 16, item 17, then item 12 (owner judgment). Items 9, 10, 11, 13 and 14 are done. Item 7 (rate limiting, first numbering) was
 done 2026-09-04 but **only for `/api/chat`**; the other three unprotected routes it names are
 still open — see the item for the carried-forward scope note.
 
@@ -342,7 +342,9 @@ Loop-Agent: backlog-refresh / claude / laptop
 
 `next.config.ts:50-53` — the Content-Security-Policy header sets `script-src 'self' 'unsafe-inline' 'unsafe-eval'` with an explicit `// TODO: for production, replace 'unsafe-inline' with nonce-based CSP via next.config.ts experimental: { nonce: true } + middleware.` This is the only TODO/FIXME/XXX/HACK marker in the entire `.ts`/`.tsx` tree. Not filed anywhere in the backlog. Flagging as owner-judgment-needed since tightening CSP could affect any inline scripts downstream builders add to this boilerplate — not a drop-in fix.
 
-## 13. No coverage tooling installed — `vitest run --coverage` fails outright   `source: coverage`
+## 13. ~~No coverage tooling installed — `vitest run --coverage` fails outright~~ ✅   `source: coverage`
+
+**Done (2026-11-23):** `@vitest/coverage-v8` 2.1.9 (pinned to the installed vitest) is a devDependency, `pnpm test:coverage` runs `vitest run --coverage`, and `vitest.config.ts` scopes the report to `src/**/*.ts` (tests excluded) and writes HTML to `coverage/` (git-ignored). Plain `pnpm test` and CI are unchanged. Items 15-17 below were found with it.
 
 `npx vitest run --coverage` errors with `MISSING DEPENDENCY  Cannot find dependency '@vitest/coverage-v8'`; `package.json` has no `test:coverage` script and neither `@vitest/coverage-v8` nor `@vitest/coverage-istanbul` is a devDependency. Every coverage item in this backlog (including items 6/7 and 9-11 above) had to be found by manually diffing `src/**/*.ts` against `src/**/*.test.ts` rather than real line/branch percentages. Lowest priority of this batch — a tooling gap, not a code risk.
 
@@ -378,3 +380,36 @@ the cheap tier.
 Item 6 (2026-08-27) also touches a DB write path (`WebhookEvent` updates) but the fix is a
 one-line mirror of the already-correct `deliver()` path and is pinned by unit tests, so it was
 done on the cheap tier and its PR left open for human review rather than auto-merged.
+
+## 15. `/api/org/switch` GET redirects to any URL passed in `redirect` (open redirect)   `source: code`
+
+`src/app/api/org/switch/route.ts`, `GET`: `NextResponse.redirect(new URL(redirect, req.url))`
+with `redirect` taken straight from the query string. `new URL("https://evil.example", base)`
+and `new URL("//evil.example", base)` both resolve to the outside host (checked with node on
+2026-11-23), so `/api/org/switch?orgId=<an org the victim belongs to>&redirect=//evil.example`
+sends a signed-in user off-site from a link on this app's own domain. The membership check
+narrows it (the attacker needs a valid org id for the victim) but does not close it. Every
+in-app caller passes a same-origin path (`org-switcher.tsx`, `onboarding/page.tsx`,
+`dashboard/layout.tsx`). **Fix:** accept only a path that starts with a single `/` (not `//`
+or `/\`) and fall back to `/dashboard` otherwise. **Check:** a route test where `redirect`
+is `https://evil.example` and `//evil.example` gets a `Location` on the app's own origin, and
+`/dashboard/agents` is kept.
+
+## 16. Budget alerts fire on every request past 80%, and never at 100%   `source: code`
+
+`src/lib/ai/cost.ts`, `checkBudget()`: once usage is at or above 80% of the quota, every call
+dispatches a `usage.budget_threshold` webhook (one per chat message, no "already alerted this
+period" record). At or above 100% it throws `BUDGET_EXCEEDED` *before* the alert block, so
+the 100% alert that the module header promises ("80% / 100% alerts") is never sent. Orgs that
+subscribe to the event get flooded between 80% and 100% and hear nothing when they are cut
+off. **Check:** unit tests with prisma mocked: two calls at 85% dispatch once per period;
+a call at 100% dispatches a 100% alert and still throws. `cost.ts` is at 4% line coverage.
+
+## 17. `checkBudget()` and `getCurrentPeriodUsage()` can read different subscriptions   `source: code`
+
+Both query `subscription.findFirst({ status in ACTIVE/TRIALING })`, but only
+`getCurrentPeriodUsage()` adds `orderBy: { createdAt: "desc" }`. With two live subscriptions
+(an upgrade that left the old one TRIALING, for example) the quota can come from one plan and
+the billing period from the other, so the budget check compares the wrong numbers. **Fix:**
+read the subscription once with an explicit order and pass it down. **Check:** a test with two
+subscriptions returned in different orders gets the newest plan's quota and period.
