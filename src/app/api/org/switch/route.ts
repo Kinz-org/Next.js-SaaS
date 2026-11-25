@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/session";
 import { setActiveOrgId, getOrgMembership } from "@/lib/auth/org-context";
+import { safeRedirectPath } from "@/lib/http/safe-redirect";
 
 /**
  * Switch the active organization for the current user.
@@ -31,7 +32,9 @@ export async function GET(req: NextRequest) {
 
   await setActiveOrgId(orgId);
 
-  const redirect = req.nextUrl.searchParams.get("redirect") ?? "/dashboard";
+  // Same-origin paths only: an absolute or protocol-relative `redirect` would
+  // otherwise send a signed-in user off-site from a link on this domain.
+  const redirect = safeRedirectPath(req.nextUrl.searchParams.get("redirect"), req.url);
   return NextResponse.redirect(new URL(redirect, req.url));
 }
 
