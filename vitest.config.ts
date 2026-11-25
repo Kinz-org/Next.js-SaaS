@@ -8,6 +8,14 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    coverage: {
+      // `pnpm test:coverage`. Off for plain `pnpm test`, so CI is unchanged.
+      provider: "v8",
+      include: ["src/**/*.ts"],
+      exclude: ["src/**/*.test.ts", "src/**/*.d.ts"],
+      reporter: ["text-summary", "text", "html"],
+      reportsDirectory: "coverage",
+    },
     server: {
       deps: {
         // Prisma 7's @prisma/client does `require(".prisma/client/default")`.
