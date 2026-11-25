@@ -6,7 +6,7 @@ cycles rather than the easiest one.
 
 **Status (2026-10-14):** items 1–8 (first numbering) are done, and so are items 6 and 7
 (re-numbered: `metering.ts` coverage, done 2026-10-02; `dispatcher.ts` coverage, done
-2026-10-14). Open, in priority order (2026-11-23): item 15, item 16, item 17, then item 12 (owner judgment). Items 9, 10, 11, 13 and 14 are done. Item 7 (rate limiting, first numbering) was
+2026-10-14). Open, in priority order (2026-11-25): item 16, item 17, then item 12 (owner judgment). Items 9, 10, 11, 13, 14 and 15 are done. Item 7 (rate limiting, first numbering) was
 done 2026-09-04 but **only for `/api/chat`**; the other three unprotected routes it names are
 still open — see the item for the carried-forward scope note.
 
@@ -381,7 +381,9 @@ Item 6 (2026-08-27) also touches a DB write path (`WebhookEvent` updates) but th
 one-line mirror of the already-correct `deliver()` path and is pinned by unit tests, so it was
 done on the cheap tier and its PR left open for human review rather than auto-merged.
 
-## 15. `/api/org/switch` GET redirects to any URL passed in `redirect` (open redirect)   `source: code`
+## 15. ~~`/api/org/switch` GET redirects to any URL passed in `redirect` (open redirect)~~ ✅   `source: code`
+
+- [x] Fixed (done 2026-11-25): `safeRedirectPath()` in `src/lib/http/safe-redirect.ts` keeps only a `/`-prefixed target that still resolves to the request's origin, else `/dashboard`. `src/app/api/org/switch/route.test.ts` covers `https://`, `//`, `/\`, `/<tab>/` and `javascript:` targets (5 of its tests fail on the old code); `safe-redirect.test.ts` covers the helper.
 
 `src/app/api/org/switch/route.ts`, `GET`: `NextResponse.redirect(new URL(redirect, req.url))`
 with `redirect` taken straight from the query string. `new URL("https://evil.example", base)`
